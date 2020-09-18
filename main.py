@@ -66,6 +66,13 @@ class DBSession:
     def replaceTask(self, uuid_, item):
         self.tasks[uuid_] = item
 
+    def alterTask(self, uuid_, item):
+        update_data = item.dict(exclude_unset=True)
+        self.tasks[uuid_] = self.tasks[uuid_].copy(update=update_data)
+
+    def deleteTask(self, uuid_):
+        del self.tasks[uuid_]
+
 
 def get_db():
     return DBSession()
@@ -138,8 +145,7 @@ async def replace_task(uuid_: uuid.UUID, item: Task, db: DBSession = Depends(get
 )
 async def alter_task(uuid_: uuid.UUID, item: Task, db: DBSession = Depends(get_db)):
     try:
-        update_data = item.dict(exclude_unset=True)
-        db.tasks[uuid_] = db.tasks[uuid_].copy(update=update_data)
+        db.alterTask(uuid_, item)
     except KeyError as exception:
         raise HTTPException(
             status_code=404,
@@ -155,7 +161,7 @@ async def alter_task(uuid_: uuid.UUID, item: Task, db: DBSession = Depends(get_d
 )
 async def remove_task(uuid_: uuid.UUID, db: DBSession = Depends(get_db)):
     try:
-        del db.tasks[uuid_]
+        db.deleteTask(uuid_)
     except KeyError as exception:
         raise HTTPException(
             status_code=404,
