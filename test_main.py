@@ -11,21 +11,6 @@ def test_read_main_returns_not_found():
     assert response.json() == {"detail": "Not Found"}
 
 
-def test_get_whole_list_when_empty():
-    # Get list when empty
-    response = client.get("/task")
-    assert response.status_code == 200
-    assert response.json() == {}  # list is always empty initially
-
-
-def test_delete_invalid_task():
-    # Try to delete random uuid
-    uuid_ = uuid.uuid4()
-    response = client.delete(f"/task/{uuid_}")
-    assert response.status_code == 404
-    assert response.json() == {"detail": "Task not found"}
-
-
 def test_create_task_and_delete_valid_task():
     # Create task to be deleted
     response = client.post(
@@ -37,6 +22,47 @@ def test_create_task_and_delete_valid_task():
     response2 = client.delete(f"/task/{response.json()}")
     assert response2.status_code == 200
     assert response2.json() == None
+
+
+def test_delete_invalid_task():
+    # Try to delete random uuid
+    uuid_ = uuid.uuid4()
+    response = client.delete(f"/task/{uuid_}")
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Task not found"}
+
+
+def test_get_valid_task():
+    # Create task to get
+    response = client.post(
+        "/task", json={"description": "some description", "completed": "False"}
+    )
+    assert response.status_code == 200
+
+    # Get task
+    response2 = client.get(f"/task/{response.json()}")
+    assert response2.status_code == 200
+    assert response2.json() == {"description": "some description", "completed": False}
+
+    # delete task to avoid mistakes on other tests
+    response3 = client.delete(f"/task/{response.json()}")
+    assert response3.status_code == 200
+    assert response3.json() == None
+
+
+def test_get_invalid_task():
+    # Get task with random UUID
+    uuid_ = uuid.uuid4()
+    response = client.get(f"/task/{uuid_}")
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Task not found"}
+
+
+def test_get_whole_list_when_empty():
+    # Get list when empty
+    response = client.get("/task")
+    assert response.status_code == 200
+    assert response.json() == {}  # list is always empty initially
 
 
 def test_get_whole_list():
@@ -99,7 +125,7 @@ def test_get_completed_tasks():
     )
     assert response3.status_code == 200
 
-    # Get incomplete tasks
+    # Get complete tasks
     response = client.get("/task?completed=true")
     assert response.status_code == 200
     assert response.json() == {
@@ -199,3 +225,52 @@ def test_patch_invalid_task():
     )
     assert response.status_code == 404
     assert response.json() == {"detail": "Task not found"}
+
+
+def test_put_valid_task():
+    # create task
+    response = client.post(
+        "/task", json={"description": "some description", "completed": "False"}
+    )
+    assert response.status_code == 200
+
+    # replace task
+    response2 = client.put(
+        f"/task/{response.json()}",
+        json={"description": "another description", "completed": "True"},
+    )
+    assert response2.status_code == 200
+    assert response2.json() == None
+
+    # verify if put worked
+    response3 = client.get(f"/task/{response.json()}")
+    assert response3.status_code == 200
+    assert response3.json() == {
+        "description": "another description",
+        "completed": True,
+    }
+
+    # delete task to avoid mistakes on other tests
+    response4 = client.delete(f"/task/{response.json()}")
+    assert response2.status_code == 200
+    assert response2.json() == None
+
+
+def test_put_invalid_uuid():
+    # Try to replace given a random uuid
+    invalid_uuid = "Not a UUID"
+    response = client.put(
+        f"/task/{invalid_uuid}", json={"description": "some description", "completed": "False"}
+    )
+    assert response.status_code == 422
+    assert response.json() == {'detail': [{'loc': ['path', 'uuid_'], 'msg': 'value is not a valid uuid', 'type': 'type_error.uuid'}]}
+
+
+def test_patch_invalid_uuid():
+    # Try to patch given a random uuid
+    invalid_uuid = "Not a UUID"
+    response = client.patch(
+        f"/task/{invalid_uuid}", json={"description": "some description", "completed": "False"}
+    )
+    assert response.status_code == 422
+    assert response.json() == {'detail': [{'loc': ['path', 'uuid_'], 'msg': 'value is not a valid uuid', 'type': 'type_error.uuid'}]}
