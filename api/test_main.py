@@ -1,8 +1,9 @@
 from fastapi.testclient import TestClient
-from main import app
+from api.main import app
 import uuid
 
 client = TestClient(app)
+
 
 def test_read_main_returns_not_found():
     response = client.get("/")
@@ -212,8 +213,8 @@ def test_patch_valid_task():
 
     # delete task to avoid mistakes on other tests
     response4 = client.delete(f"/task/{response.json()}")
-    assert response2.status_code == 200
-    assert response2.json() == None
+    assert response4.status_code == 200
+    assert response4.json() == None
 
 
 def test_patch_invalid_task():
@@ -251,25 +252,43 @@ def test_put_valid_task():
 
     # delete task to avoid mistakes on other tests
     response4 = client.delete(f"/task/{response.json()}")
-    assert response2.status_code == 200
-    assert response2.json() == None
+    assert response4.status_code == 200
+    assert response4.json() == None
 
 
 def test_put_invalid_uuid():
     # Try to replace given a random uuid
     invalid_uuid = "Not a UUID"
     response = client.put(
-        f"/task/{invalid_uuid}", json={"description": "some description", "completed": "False"}
+        f"/task/{invalid_uuid}",
+        json={"description": "some description", "completed": "False"},
     )
     assert response.status_code == 422
-    assert response.json() == {'detail': [{'loc': ['path', 'uuid_'], 'msg': 'value is not a valid uuid', 'type': 'type_error.uuid'}]}
+    assert response.json() == {
+        "detail": [
+            {
+                "loc": ["path", "uuid_"],
+                "msg": "value is not a valid uuid",
+                "type": "type_error.uuid",
+            }
+        ]
+    }
 
 
 def test_patch_invalid_uuid():
     # Try to patch given a random uuid
     invalid_uuid = "Not a UUID"
     response = client.patch(
-        f"/task/{invalid_uuid}", json={"description": "some description", "completed": "False"}
+        f"/task/{invalid_uuid}",
+        json={"description": "some description", "completed": "False"},
     )
     assert response.status_code == 422
-    assert response.json() == {'detail': [{'loc': ['path', 'uuid_'], 'msg': 'value is not a valid uuid', 'type': 'type_error.uuid'}]}
+    assert response.json() == {
+        "detail": [
+            {
+                "loc": ["path", "uuid_"],
+                "msg": "value is not a valid uuid",
+                "type": "type_error.uuid",
+            }
+        ]
+    }
